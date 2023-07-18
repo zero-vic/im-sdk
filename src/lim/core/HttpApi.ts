@@ -12,6 +12,24 @@ export default class HttpApi {
         this.url = url;
     }
 
+    callGet(url:string): Promise<ApiResponse> {
+        
+        let userId = imClient.userId;
+        log.info(userId);
+
+        let reqUrl = this.url + url;
+    
+        let requestMethod = "GET";
+
+        // const headers = {
+        //     'Content-Type':'application/json',
+        // };
+
+        const request: any = {method: requestMethod, mode: 'cors'};
+        return this.httpFetch(reqUrl, request);
+
+    }
+
     call(url:string,params?:any,body?: any): Promise<ApiResponse> {
         
         let userId = imClient.userId;

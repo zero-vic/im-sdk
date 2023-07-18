@@ -1,17 +1,41 @@
-import { imClient, sleep, IListener } from '../core/ImClient'
+import { imClient, sleep, IListener } from '../core/ImClient';
 import Visitor from '../common/Visitor';
+import HttpApi from '../core/HttpApi';
+import ApiUrl from '../api/ApiUrl';
+import log from '../log/Logger';
 
 export class KEFU {
     url: string = "";
     server_url: string = "";
-    appId: number = 1000;
+    appId: number = 10000;
     userSign: string = "sg";
 
 
 
 
     constructor() {
-    
+
+    }
+    // 添加消息div
+    addMsgDiv(msg: string) {
+        let showMsgBox = document.getElementById("showMsgDiv");
+        let subDiv = document.createElement("div");
+        subDiv.innerHTML = "<div><i>" + msg + "</i><br></div>";
+        if(showMsgBox!=null){
+            showMsgBox.appendChild(subDiv);
+        }
+        
+    }
+    // 发送文本消息
+    sendTxtMsg(msg: string, toId: string) {
+        imClient.sendP2PMessage(imClient.createP2PTextMessage(toId, msg));
+        console.log("发送消息: toid: " + toId + " msg : " + msg);
+        this.addMsgDiv(msg);
+    }
+    // 接收消息处理
+    onMessage(msg:any){
+        let data = msg.data.messageBody;
+        this.addMsgDiv(data);
     }
     // 生成html页面
     ui() {
@@ -35,26 +59,37 @@ export class KEFU {
             let showMsgBox = document.getElementById("showMsgDiv");
             let subDiv = document.createElement("div");
             subDiv.innerHTML = "<div><i>" + msg + "</i><br></div>";
-            showMsgBox.appendChild(subDiv);
+            if(showMsgBox!=null){
+                showMsgBox.appendChild(subDiv);
+            }
+            
         }
         sendBtn.onclick = function () {
             let msg = (sendMsgBox as HTMLTextAreaElement).value;
             console.log(msg)
-            showMsg(msg);
+            // showMsg(msg);
+            kefu.sendTxtMsg(msg,"lld");
         }
     }
     // 初始化
+    async init() {
+        // let visitor = new Visitor();
+        // visitor.getVisitorId(this.url);
 
-    init() {
-        let visitor = new Visitor();
-        visitor.getVisitorId(this.url);
-        
-        let visitorId = visitor.visitorId;
-        let visitorName = visitor.visitorName;
-        
-    
-        console.log("userId:" + visitorId);
-        console.log("userName" + visitorName);
+        // let visitorId = visitor.visitorId;
+        // let visitorName = visitor.visitorName;
+        let api = new HttpApi(this.url);
+        let resp = await api.callGet(ApiUrl.GET_VISITOR_ID);
+        if(resp.isFailed()){
+            log.info("获取访客id失败");
+        }
+        // this.visitorId = resp.data.visitorId;
+        // this.visitorName = resp.data.visitorName;
+        let visitor  = new Visitor(resp.data.visitorId, resp.data.visitorName);
+        localStorage.setItem("visitorId",resp.data.visitorId);
+        localStorage.setItem("visitorName",resp.data.visitorName);
+
+        console.log(visitor);
 
         var ListenerMap = {
             onSocketConnectEvent: (option, status, data) => {
@@ -76,11 +111,8 @@ export class KEFU {
             },
             onP2PMessage: (e) => {
                 console.log("onP2PMessage11 ：" + e);
-                console.log(this);
                 e = JSON.parse(e);
-                // this.$emit('P2PMessage', e.data);
-                // this.on('P2PMessage',this.onMessage);    
-                // this.onMessage(e);
+                this.onMessage(e)
 
             },
             onLogin: (uid) => {
@@ -89,7 +121,7 @@ export class KEFU {
 
 
         };
-        imClient.init("http://127.0.0.1:8000/v1", this.appId, visitorId, this.userSign, ListenerMap, function (sdk) {
+        imClient.init("http://127.0.0.1:8000/v1", this.appId, visitor.visitorId, this.userSign, ListenerMap, function (sdk) {
             if (sdk) {
                 console.log('sdk 成功连接的回调, 可以使用 sdk 请求数据了.');
 
@@ -99,6 +131,7 @@ export class KEFU {
             }
         });
     }
+
 
 }
 
