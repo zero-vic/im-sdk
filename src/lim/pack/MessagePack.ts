@@ -5,6 +5,7 @@ export class MessagePack {
     messageId: string;
     fromId?: string;
     toId?: string;
+    siteId?: string;
     messageRandom?: number;
     messageTime?: number;
     messageBody?: string;
@@ -23,9 +24,10 @@ export class MessagePack {
     }
 
 
-    buildTextMessagePack(fromId: string, toId: string, text: string) {
+    buildTextMessagePack(fromId: string, toId: string,siteId: string, text: string) {
         this.fromId = fromId;
         this.toId = toId;
+        this.siteId = siteId;
         let body = { type: 1, content: text }
         this.messageBody = Beans.json(body);
     }

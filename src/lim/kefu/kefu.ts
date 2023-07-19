@@ -5,10 +5,11 @@ import ApiUrl from '../api/ApiUrl';
 import log from '../log/Logger';
 
 export class KEFU {
-    url: string = "";
-    server_url: string = "";
+    url!: string;
+    server_url!: string;
     appId: number = 10000;
     userSign: string = "sg";
+    webSiteId!:string;
 
 
 
@@ -34,8 +35,10 @@ export class KEFU {
     }
     // 接收消息处理
     onMessage(msg:any){
-        let data = msg.data.messageBody;
-        this.addMsgDiv(data);
+        let data = JSON.parse(msg.data.messageBody);
+        console.log(data);
+        console.log( data.content);
+        this.addMsgDiv(data.content);
     }
     // 生成html页面
     ui() {
@@ -69,6 +72,10 @@ export class KEFU {
             console.log(msg)
             // showMsg(msg);
             kefu.sendTxtMsg(msg,"lld");
+        }
+        window.onbeforeunload = function(){
+            // 关闭窗口时调用，服务器结束登录
+            imClient.logout();
         }
     }
     // 初始化
@@ -121,7 +128,7 @@ export class KEFU {
 
 
         };
-        imClient.init("http://127.0.0.1:8000/v1", this.appId, visitor.visitorId, this.userSign, ListenerMap, function (sdk) {
+        imClient.init("http://127.0.0.1:8000/v1", this.appId, visitor.visitorId, this.userSign,this.webSiteId, ListenerMap, function (sdk) {
             if (sdk) {
                 console.log('sdk 成功连接的回调, 可以使用 sdk 请求数据了.');
 

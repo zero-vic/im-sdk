@@ -69,6 +69,8 @@ export class ImClient {
     listeners: IListener | any = null;
     appId!: number
     userSign!: string;
+    webSiteId!: string;
+    webSiteIdLen?: number;
     imeiLength?: number
     state = State.INIT
     // lastOfflineMessageSequence: number = 0;
@@ -102,7 +104,7 @@ export class ImClient {
      * @param callback 
      * @returns 
      */
-    public async init(httpUrl: string, appId: number, userId: string, userSign: string, listeners: any, callback: (sdk: ImClient) => void) {
+    public async init(httpUrl: string, appId: number, userId: string, userSign: string,webSiteId:string, listeners: any, callback: (sdk: ImClient) => void) {
         var self = this;
         self.httpUrl = httpUrl
         self.appId = appId;
@@ -110,6 +112,8 @@ export class ImClient {
         self.imei = WebToolkit.getDeviceInfo().system;
         self.imeiLength = getLen(self.imei);
         self.userId = userId;
+        self.webSiteId =webSiteId;
+        self.webSiteIdLen = getLen(webSiteId);
         this.userSign = userSign
         this.imeiLength = self.imeiLength;
         this.url = "ws://127.0.0.1:19000/ws";
@@ -209,8 +213,10 @@ export class ImClient {
             .int32(0x0)
             .int32(this.appId)
             .int32(this.imeiLength)
+            .int32(this.webSiteIdLen)
             .int32(bodyLen)
             .vstring(this.imei, this.imeiLength)
+            .vstring(this.webSiteId,this.webSiteIdLen)
             .vstring(jsonData, bodyLen);
         return pack;
     }
@@ -246,6 +252,7 @@ export class ImClient {
         }
         this.onclose("reconnect timeout")
     }
+    
 
     // 表示连接中止
     private onclose(reason: string) {
@@ -303,7 +310,7 @@ export class ImClient {
                 return
             }
             if (Date.now() - start >= heartbeatInterval) {
-                log.info(`>>> send ping ;`)
+                // log.info(`>>> send ping ;`)
                 start = Date.now()
                 let pingPack = imClient.buildMessagePack(SystemCommand.PING, {});
                 conn.send(pingPack.pack(false));
@@ -317,7 +324,7 @@ export class ImClient {
     //构建单聊消息对象
     public createP2PTextMessage(to: string, text: string) {
         let messagePack = new MessagePack(this.appId);
-        messagePack.buildTextMessagePack(this.userId, to, text);
+        messagePack.buildTextMessagePack(this.userId, to,this.webSiteId, text);
         return messagePack;
     }
 
@@ -329,8 +336,8 @@ export class ImClient {
         }
     }
     // 登出
-    public logout(appId:number,userId:string,clientType:number){
-        let pack = new LoginPack(appId,userId,clientType);
+    public logout(){
+        let pack = new LoginPack(this.appId,this.userId,this.clientType);
         let logoutPack = imClient.buildMessagePack(SystemCommand.LOGOUT,pack);
         if (this.conn){
             this.conn.send(logoutPack.pack(false));
